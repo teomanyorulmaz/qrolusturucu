@@ -1,0 +1,2129 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1.0,
+maximum-scale=1.0,
+user-scalable=no">
+
+<title>DEPO QR / BARKOD OKUYUCU</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+html,body{
+    margin:0;
+    padding:0;
+    width:100%;
+    background:#111;
+    color:white;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    padding:6px;
+}
+
+h2{
+    text-align:center;
+    margin:4px 0 8px;
+    font-size:19px;
+}
+
+
+/* =========================
+   KAMERA
+========================= */
+
+#kameraAlan{
+
+    position:relative;
+
+    width:100%;
+
+    height:42vh;
+
+    min-height:230px;
+
+    max-height:420px;
+
+    background:#000;
+
+    overflow:hidden;
+
+    border-radius:12px;
+
+    border:2px solid #333;
+}
+
+#video{
+
+    width:100%;
+
+    height:100%;
+
+    display:block;
+
+    object-fit:cover;
+
+    object-position:center center;
+
+    background:#000;
+}
+
+
+/* =========================
+   KIRMIZI TARAMA ALANI
+========================= */
+
+#kilavuz{
+
+    position:absolute;
+
+    left:50%;
+
+    top:50%;
+
+    width:78%;
+
+    height:38%;
+
+    transform:translate(-50%,-50%);
+
+    border:3px solid red;
+
+    border-radius:8px;
+
+    z-index:10;
+
+    touch-action:none;
+
+    box-shadow:
+        0 0 0 9999px rgba(0,0,0,.48);
+}
+
+#kilavuzYazi{
+
+    position:absolute;
+
+    left:50%;
+
+    top:-31px;
+
+    transform:translateX(-50%);
+
+    background:rgba(0,0,0,.85);
+
+    padding:5px 8px;
+
+    border-radius:5px;
+
+    font-size:11px;
+
+    white-space:nowrap;
+}
+
+
+/* BOYUT TUTACAĞI */
+
+#boyutTutacak{
+
+    position:absolute;
+
+    right:-15px;
+
+    bottom:-15px;
+
+    width:30px;
+
+    height:30px;
+
+    background:red;
+
+    border:3px solid white;
+
+    border-radius:50%;
+
+    touch-action:none;
+
+    z-index:20;
+}
+
+
+/* =========================
+   GEÇİCİ OKUNAN QR
+========================= */
+
+#okunanAlan{
+
+    margin-top:8px;
+
+    padding:10px;
+
+    background:#202020;
+
+    border:2px solid #555;
+
+    border-radius:10px;
+
+    min-height:100px;
+}
+
+#okunanBaslik{
+
+    font-weight:bold;
+
+    font-size:15px;
+
+    margin-bottom:6px;
+
+    color:#ff5252;
+}
+
+#okunanSonuc{
+
+    font-size:14px;
+
+    line-height:21px;
+
+    word-break:break-all;
+
+    overflow-wrap:anywhere;
+
+    max-height:130px;
+
+    overflow-y:auto;
+
+    color:#fff;
+}
+
+#kaydetBtn{
+
+    width:100%;
+
+    margin-top:8px;
+
+    padding:13px;
+
+    background:#00a651;
+
+    color:white;
+
+    border:none;
+
+    border-radius:8px;
+
+    font-size:16px;
+
+    font-weight:bold;
+
+    display:none;
+}
+
+
+/* =========================
+   DURUM
+========================= */
+
+#durum{
+
+    width:100%;
+
+    text-align:center;
+
+    margin:7px 0;
+
+    padding:8px;
+
+    background:#222;
+
+    border-radius:7px;
+
+    font-size:13px;
+}
+
+
+/* =========================
+   BUTONLAR
+========================= */
+
+.butons{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:7px;
+
+    margin-top:7px;
+}
+
+.butons button{
+
+    width:100%;
+
+    padding:12px 5px;
+
+    border:none;
+
+    border-radius:8px;
+
+    color:white;
+
+    font-size:13px;
+
+    font-weight:bold;
+}
+
+#baslatBtn{
+    background:#1976d2;
+}
+
+#durdurBtn{
+    background:#d32f2f;
+}
+
+#excelBtn{
+    background:#388e3c;
+}
+
+#temizleBtn{
+    background:#555;
+}
+
+
+/* =========================
+   KAYITLI LİSTE
+========================= */
+
+#sonuclar{
+
+    margin-top:8px;
+
+    background:#1b1b1b;
+
+    border-radius:10px;
+
+    padding:9px;
+}
+
+#sonucBaslik{
+
+    font-size:17px;
+
+    font-weight:bold;
+
+    margin-bottom:8px;
+
+    padding-bottom:7px;
+
+    border-bottom:1px solid #444;
+}
+
+#seriListesi{
+
+    max-height:300px;
+
+    overflow-y:auto;
+}
+
+.qrSatiri{
+
+    position:relative;
+
+    width:100%;
+
+    min-height:55px;
+
+    margin-bottom:7px;
+
+    padding:9px 62px 9px 10px;
+
+    background:#292929;
+
+    border:1px solid #444;
+
+    border-radius:7px;
+
+    font-size:13px;
+
+    word-break:break-all;
+}
+
+.qrSil{
+
+    position:absolute;
+
+    right:6px;
+
+    top:50%;
+
+    transform:translateY(-50%);
+
+    width:50px;
+
+    height:30px;
+
+    background:#b71c1c;
+
+    color:white;
+
+    border:none;
+
+    border-radius:5px;
+
+    font-size:11px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<h2>
+📷 DEPO QR / BARKOD OKUYUCU
+</h2>
+
+
+<!-- =========================
+     KAMERA
+========================= -->
+
+<div id="kameraAlan">
+
+    <video
+        id="video"
+        autoplay
+        muted
+        playsinline>
+    </video>
+
+
+    <div id="kilavuz">
+
+        <div id="kilavuzYazi">
+            QR / BARKODU BURAYA GETİRİN
+        </div>
+
+        <div id="boyutTutacak"></div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     GEÇİCİ OKUNAN QR
+========================= -->
+
+<div id="okunanAlan">
+
+    <div id="okunanBaslik">
+        🔎 OKUNAN QR
+    </div>
+
+    <div id="okunanSonuc">
+        Henüz QR okunmadı.
+    </div>
+
+    <button
+        id="kaydetBtn"
+        onclick="okunanQRYiKaydet()">
+
+        ✓ KAYDET
+
+    </button>
+
+</div>
+
+
+<div id="durum">
+    Kamera başlatılmadı.
+</div>
+
+
+<!-- =========================
+     BUTONLAR
+========================= -->
+
+<div class="butons">
+
+    <button
+        id="baslatBtn"
+        onclick="kamerayiBaslat()">
+
+        📷 KAMERAYI BAŞLAT
+
+    </button>
+
+
+    <button
+        id="durdurBtn"
+        onclick="kamerayiDurdur()">
+
+        ⛔ KAMERAYI DURDUR
+
+    </button>
+
+
+    <button
+        id="excelBtn"
+        onclick="excelOlustur()">
+
+        📊 EXCEL OLUŞTUR
+
+    </button>
+
+
+    <button
+        id="temizleBtn"
+        onclick="tumunuTemizle()">
+
+        🗑️ TÜMÜNÜ TEMİZLE
+
+    </button>
+
+</div>
+
+
+<!-- =========================
+     KAYITLI QR LİSTESİ
+========================= -->
+
+<div id="sonuclar">
+
+    <div id="sonucBaslik">
+
+        📋 KAYITLI QR KODLARI:
+
+        <span id="adet">0</span>
+
+    </div>
+
+    <div id="seriListesi"></div>
+
+</div>
+
+
+<script>
+
+
+/* =====================================================
+   DEĞİŞKENLER
+===================================================== */
+
+const video =
+    document.getElementById("video");
+
+
+let kameraAkisi = null;
+
+let taramaTimer = null;
+
+let barkodOkuyucu = null;
+
+let audioContext = null;
+
+
+/*
+   ŞU ANDA OKUNAN
+   AMA HENÜZ KAYDEDİLMEYEN QR
+*/
+
+let bekleyenQR = null;
+
+let bekleyenSeriler = [];
+
+
+/*
+   KAYDEDİLMİŞ QR'LAR
+*/
+
+let qrKayitlari =
+    JSON.parse(
+        localStorage.getItem(
+            "depo_qr_kayitlari"
+        ) || "[]"
+    );
+
+
+/* =====================================================
+   BARCODE DETECTOR
+===================================================== */
+
+if ("BarcodeDetector" in window) {
+
+    try {
+
+        barkodOkuyucu =
+            new BarcodeDetector({
+
+                formats:[
+
+                    "qr_code",
+
+                    "code_128",
+
+                    "code_39",
+
+                    "ean_13",
+
+                    "ean_8",
+
+                    "upc_a",
+
+                    "upc_e",
+
+                    "data_matrix"
+
+                ]
+
+            });
+
+    }
+
+    catch(e){
+
+        barkodOkuyucu = null;
+
+    }
+
+}
+
+
+/* =====================================================
+   SES
+===================================================== */
+
+function sesHazirla(){
+
+    try{
+
+        const AC =
+            window.AudioContext ||
+            window.webkitAudioContext;
+
+        if(!AC){
+            return;
+        }
+
+        if(!audioContext){
+
+            audioContext =
+                new AC();
+
+        }
+
+        if(
+            audioContext.state ===
+            "suspended"
+        ){
+
+            audioContext.resume();
+
+        }
+
+    }
+    catch(e){}
+
+}
+
+
+/* =====================================================
+   QR OKUNDUĞUNDA SES
+===================================================== */
+
+function okumaSesi(){
+
+    try{
+
+        sesHazirla();
+
+        if(!audioContext){
+            return;
+        }
+
+
+        const osc =
+            audioContext.createOscillator();
+
+
+        const gain =
+            audioContext.createGain();
+
+
+        osc.type =
+            "square";
+
+
+        osc.frequency.value =
+            1200;
+
+
+        gain.gain.setValueAtTime(
+            0.0001,
+            audioContext.currentTime
+        );
+
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.55,
+            audioContext.currentTime + 0.01
+        );
+
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.0001,
+            audioContext.currentTime + 0.17
+        );
+
+
+        osc.connect(gain);
+
+        gain.connect(
+            audioContext.destination
+        );
+
+
+        osc.start();
+
+
+        osc.stop(
+            audioContext.currentTime + 0.18
+        );
+
+    }
+    catch(e){}
+
+}
+
+
+/* =====================================================
+   QR İÇERİĞİNİ SERİLERE AYIR
+===================================================== */
+
+function qrIceriginiSerilereAyir(
+    deger
+){
+
+    let seriler =
+        deger
+
+        .split(
+            /[\r\n,;]+/
+        )
+
+        .map(
+            s => s.trim()
+        )
+
+        .filter(
+            s => s !== ""
+        );
+
+
+    if(
+        seriler.length === 0
+    ){
+
+        seriler = [
+            deger.trim()
+        ];
+
+    }
+
+
+    return seriler;
+
+}
+
+
+/* =====================================================
+   KAMERA BAŞLAT
+===================================================== */
+
+async function kamerayiBaslat(){
+
+    try{
+
+        sesHazirla();
+
+
+        kamerayiDurdur();
+
+
+        if(
+            !navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia
+        ){
+
+            durumGoster(
+                "❌ Kamera desteklenmiyor."
+            );
+
+            return;
+
+        }
+
+
+        /*
+           ARKA KAMERA
+        */
+
+        try{
+
+            kameraAkisi =
+                await navigator.mediaDevices
+                .getUserMedia({
+
+                    video:{
+
+                        facingMode:{
+                            exact:"environment"
+                        },
+
+                        width:{
+                            ideal:1920
+                        },
+
+                        height:{
+                            ideal:1080
+                        }
+
+                    },
+
+                    audio:false
+
+                });
+
+        }
+        catch(e){
+
+            kameraAkisi =
+                await navigator.mediaDevices
+                .getUserMedia({
+
+                    video:{
+
+                        facingMode:{
+                            ideal:"environment"
+                        },
+
+                        width:{
+                            ideal:1920
+                        },
+
+                        height:{
+                            ideal:1080
+                        }
+
+                    },
+
+                    audio:false
+
+                });
+
+        }
+
+
+        video.srcObject =
+            kameraAkisi;
+
+
+        await video.play();
+
+
+        video.style.objectPosition =
+            "center center";
+
+
+        durumGoster(
+            "🟢 Kamera açık. QR'ı kırmızı alanın içine getirin."
+        );
+
+
+        taramaYap();
+
+    }
+    catch(e){
+
+        console.error(e);
+
+        durumGoster(
+            "❌ Kamera açılamadı. Kamera iznini kontrol edin."
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   KAMERA DURDUR
+===================================================== */
+
+function kamerayiDurdur(){
+
+    if(taramaTimer){
+
+        clearTimeout(
+            taramaTimer
+        );
+
+        taramaTimer = null;
+
+    }
+
+
+    if(kameraAkisi){
+
+        kameraAkisi
+        .getTracks()
+        .forEach(
+            track => track.stop()
+        );
+
+        kameraAkisi = null;
+
+    }
+
+
+    video.srcObject = null;
+
+}
+
+
+/* =====================================================
+   TARAMA
+===================================================== */
+
+async function taramaYap(){
+
+    if(
+        !kameraAkisi ||
+        video.readyState < 2
+    ){
+
+        taramaTimer =
+            setTimeout(
+                taramaYap,
+                250
+            );
+
+        return;
+
+    }
+
+
+    try{
+
+        const alan =
+            document.getElementById(
+                "kilavuz"
+            );
+
+
+        const videoRect =
+            video.getBoundingClientRect();
+
+
+        const alanRect =
+            alan.getBoundingClientRect();
+
+
+        const videoWidth =
+            video.videoWidth;
+
+
+        const videoHeight =
+            video.videoHeight;
+
+
+        const containerWidth =
+            videoRect.width;
+
+
+        const containerHeight =
+            videoRect.height;
+
+
+        const videoOran =
+            videoWidth /
+            videoHeight;
+
+
+        const containerOran =
+            containerWidth /
+            containerHeight;
+
+
+        let scale;
+
+        let offsetX = 0;
+
+        let offsetY = 0;
+
+
+        /*
+           object-fit:cover
+           hesabı
+        */
+
+        if(
+            videoOran >
+            containerOran
+        ){
+
+            scale =
+                containerHeight /
+                videoHeight;
+
+
+            const gorunenWidth =
+                videoWidth *
+                scale;
+
+
+            offsetX =
+                (
+                    gorunenWidth -
+                    containerWidth
+                ) / 2;
+
+        }
+        else{
+
+            scale =
+                containerWidth /
+                videoWidth;
+
+
+            const gorunenHeight =
+                videoHeight *
+                scale;
+
+
+            offsetY =
+                (
+                    gorunenHeight -
+                    containerHeight
+                ) / 2;
+
+        }
+
+
+        /*
+           KIRMIZI ALAN
+           GERÇEK KAMERA KOORDİNATI
+        */
+
+        let x =
+            (
+                alanRect.left -
+                videoRect.left +
+                offsetX
+            ) / scale;
+
+
+        let y =
+            (
+                alanRect.top -
+                videoRect.top +
+                offsetY
+            ) / scale;
+
+
+        let width =
+            alanRect.width /
+            scale;
+
+
+        let height =
+            alanRect.height /
+            scale;
+
+
+        /*
+           SINIR
+        */
+
+        x = Math.max(
+            0,
+            Math.min(
+                x,
+                videoWidth - 1
+            )
+        );
+
+
+        y = Math.max(
+            0,
+            Math.min(
+                y,
+                videoHeight - 1
+            )
+        );
+
+
+        width =
+            Math.min(
+                width,
+                videoWidth - x
+            );
+
+
+        height =
+            Math.min(
+                height,
+                videoHeight - y
+            );
+
+
+        /*
+           DAHA YÜKSEK ÇÖZÜNÜRLÜK
+        */
+
+        const buyutme = 2;
+
+
+        const canvas =
+            document.createElement(
+                "canvas"
+            );
+
+
+        canvas.width =
+            Math.max(
+                300,
+                Math.round(
+                    width *
+                    buyutme
+                )
+            );
+
+
+        canvas.height =
+            Math.max(
+                200,
+                Math.round(
+                    height *
+                    buyutme
+                )
+            );
+
+
+        const ctx =
+            canvas.getContext(
+                "2d"
+            );
+
+
+        ctx.imageSmoothingEnabled =
+            false;
+
+
+        /*
+           SADECE KIRMIZI
+           ALANI ÇİZ
+        */
+
+        ctx.drawImage(
+
+            video,
+
+            x,
+            y,
+            width,
+            height,
+
+            0,
+            0,
+            canvas.width,
+            canvas.height
+
+        );
+
+
+        /*
+           QR OKU
+        */
+
+        const barkodlar =
+            await barkodOkuyucu.detect(
+                canvas
+            );
+
+
+        if(
+            barkodlar.length > 0
+        ){
+
+            /*
+               Birden fazla kod varsa
+               merkeze en yakın olanı seç
+            */
+
+            let secilen =
+                barkodlar[0];
+
+
+            if(
+                barkodlar.length > 1
+            ){
+
+                const merkezX =
+                    canvas.width / 2;
+
+                const merkezY =
+                    canvas.height / 2;
+
+
+                let enYakin =
+                    Infinity;
+
+
+                barkodlar.forEach(
+                    function(b){
+
+                        if(
+                            !b.boundingBox
+                        ){
+                            return;
+                        }
+
+
+                        const box =
+                            b.boundingBox;
+
+
+                        const bx =
+                            box.x +
+                            box.width / 2;
+
+
+                        const by =
+                            box.y +
+                            box.height / 2;
+
+
+                        const uzaklik =
+                            Math.hypot(
+                                bx - merkezX,
+                                by - merkezY
+                            );
+
+
+                        if(
+                            uzaklik <
+                            enYakin
+                        ){
+
+                            enYakin =
+                                uzaklik;
+
+                            secilen = b;
+
+                        }
+
+                    }
+                );
+
+            }
+
+
+            const deger =
+                secilen.rawValue
+                .trim();
+
+
+            if(deger){
+
+                qrOkundu(deger);
+
+            }
+
+        }
+
+    }
+    catch(e){
+
+        console.log(
+            "Tarama:",
+            e
+        );
+
+    }
+
+
+    taramaTimer =
+        setTimeout(
+            taramaYap,
+            180
+        );
+
+}
+
+
+/* =====================================================
+   QR OKUNDU
+   AMA HENÜZ KAYDEDİLMEYECEK
+===================================================== */
+
+function qrOkundu(
+    deger
+){
+
+    /*
+       Aynı bekleyen QR ise
+       tekrar ses verme
+    */
+
+    if(
+        bekleyenQR === deger
+    ){
+
+        return;
+
+    }
+
+
+    bekleyenQR =
+        deger;
+
+
+    bekleyenSeriler =
+        qrIceriginiSerilereAyir(
+            deger
+        );
+
+
+    /*
+       EKRANDA GEÇİCİ GÖSTER
+    */
+
+    geciciSonucuGoster();
+
+
+    /*
+       SES
+    */
+
+    okumaSesi();
+
+
+    durumGoster(
+        "🔎 QR okundu. Kaydetmek için KAYDET'e basın."
+    );
+
+}
+
+
+/* =====================================================
+   GEÇİCİ SONUCU GÖSTER
+===================================================== */
+
+function geciciSonucuGoster(){
+
+    const alan =
+        document.getElementById(
+            "okunanSonuc"
+        );
+
+
+    if(
+        !bekleyenQR
+    ){
+
+        alan.innerHTML =
+            "Henüz QR okunmadı.";
+
+        document.getElementById(
+            "kaydetBtn"
+        ).style.display =
+            "none";
+
+        return;
+
+    }
+
+
+    let html = "";
+
+
+    html +=
+        "<b>📦 " +
+        bekleyenSeriler.length +
+        " seri bulundu</b><br><br>";
+
+
+    bekleyenSeriler.forEach(
+        function(seri,index){
+
+            html +=
+                (index + 1) +
+                ". " +
+                escapeHtml(
+                    seri
+                ) +
+                "<br>";
+
+        }
+    );
+
+
+    alan.innerHTML =
+        html;
+
+
+    /*
+       KAYDET BUTONU GÖSTER
+    */
+
+    document.getElementById(
+        "kaydetBtn"
+    ).style.display =
+        "block";
+
+}
+
+
+/* =====================================================
+   OKUNAN QR'I KAYDET
+===================================================== */
+
+function okunanQRYiKaydet(){
+
+    if(
+        !bekleyenQR
+    ){
+
+        alert(
+            "Önce QR okutun."
+        );
+
+        return;
+
+    }
+
+
+    /*
+       AYNI QR DAHA ÖNCE
+       KAYDEDİLMİŞ Mİ?
+    */
+
+    const zatenVar =
+        qrKayitlari.some(
+            function(kayit){
+
+                return (
+                    kayit.qr ===
+                    bekleyenQR
+                );
+
+            }
+        );
+
+
+    if(zatenVar){
+
+        alert(
+            "⚠️ Bu QR kod daha önce kaydedilmiş."
+        );
+
+        return;
+
+    }
+
+
+    /*
+       KAYDET
+    */
+
+    qrKayitlari.push({
+
+        qr:bekleyenQR,
+
+        seriler:[
+            ...bekleyenSeriler
+        ]
+
+    });
+
+
+    localStorage.setItem(
+
+        "depo_qr_kayitlari",
+
+        JSON.stringify(
+            qrKayitlari
+        )
+
+    );
+
+
+    /*
+       LİSTEYİ GÜNCELLE
+    */
+
+    listeyiGoster();
+
+
+    /*
+       KAYDEDİLDİ MESAJI
+    */
+
+    durumGoster(
+
+        "✅ " +
+        bekleyenSeriler.length +
+        " seri kaydedildi."
+
+    );
+
+
+    /*
+       GEÇİCİ QR'I TEMİZLE
+    */
+
+    bekleyenQR = null;
+
+    bekleyenSeriler = [];
+
+
+    document.getElementById(
+        "okunanSonuc"
+    ).innerHTML =
+        "✅ QR kaydedildi. Yeni QR okutabilirsiniz.";
+
+
+    document.getElementById(
+        "kaydetBtn"
+    ).style.display =
+        "none";
+
+}
+
+
+/* =====================================================
+   KAYITLI LİSTEYİ GÖSTER
+===================================================== */
+
+function listeyiGoster(){
+
+    const liste =
+        document.getElementById(
+            "seriListesi"
+        );
+
+
+    liste.innerHTML = "";
+
+
+    qrKayitlari.forEach(
+
+        function(kayit,index){
+
+            const satir =
+                document.createElement(
+                    "div"
+                );
+
+
+            satir.className =
+                "qrSatiri";
+
+
+            let metin =
+                kayit.qr;
+
+
+            if(
+                metin.length > 70
+            ){
+
+                metin =
+                    metin.substring(
+                        0,
+                        70
+                    ) +
+                    "...";
+
+            }
+
+
+            satir.innerHTML =
+
+                "<b>" +
+                (index + 1) +
+                ". QR KOD</b><br>" +
+
+                "📦 " +
+                kayit.seriler.length +
+                " seri<br>" +
+
+                "<small>" +
+                escapeHtml(
+                    metin
+                ) +
+                "</small>";
+
+
+            const sil =
+                document.createElement(
+                    "button"
+                );
+
+
+            sil.className =
+                "qrSil";
+
+
+            sil.textContent =
+                "SİL";
+
+
+            sil.onclick =
+                function(){
+
+                    qrKayitlari.splice(
+                        index,
+                        1
+                    );
+
+
+                    localStorage.setItem(
+
+                        "depo_qr_kayitlari",
+
+                        JSON.stringify(
+                            qrKayitlari
+                        )
+
+                    );
+
+
+                    listeyiGoster();
+
+                };
+
+
+            satir.appendChild(
+                sil
+            );
+
+
+            liste.appendChild(
+                satir
+            );
+
+        }
+
+    );
+
+
+    document.getElementById(
+        "adet"
+    ).textContent =
+        qrKayitlari.length;
+
+}
+
+
+/* =====================================================
+   EXCEL
+===================================================== */
+
+function excelOlustur(){
+
+    if(
+        qrKayitlari.length === 0
+    ){
+
+        alert(
+            "Kaydedilmiş QR bulunmuyor."
+        );
+
+        return;
+
+    }
+
+
+    let veri = [];
+
+
+    /*
+       BAŞLIK YOK
+
+       TÜM SERİLER ALT ALTA
+    */
+
+    qrKayitlari.forEach(
+
+        function(kayit){
+
+            kayit.seriler.forEach(
+
+                function(seri){
+
+                    veri.push([
+                        seri
+                    ]);
+
+                }
+
+            );
+
+        }
+
+    );
+
+
+    const ws =
+        XLSX.utils.aoa_to_sheet(
+            veri
+        );
+
+
+    const wb =
+        XLSX.utils.book_new();
+
+
+    XLSX.utils.book_append_sheet(
+
+        wb,
+
+        ws,
+
+        "Seriler"
+
+    );
+
+
+    XLSX.writeFile(
+
+        wb,
+
+        "depo_seriler.xlsx"
+
+    );
+
+
+    durumGoster(
+
+        "📊 " +
+        veri.length +
+        " seri Excel'e aktarıldı."
+
+    );
+
+}
+
+
+/* =====================================================
+   TÜMÜNÜ TEMİZLE
+===================================================== */
+
+function tumunuTemizle(){
+
+    if(
+        qrKayitlari.length === 0
+    ){
+
+        return;
+
+    }
+
+
+    if(
+        !confirm(
+            "Kaydedilmiş tüm QR kodları silinsin mi?"
+        )
+    ){
+
+        return;
+
+    }
+
+
+    qrKayitlari = [];
+
+
+    localStorage.removeItem(
+        "depo_qr_kayitlari"
+    );
+
+
+    listeyiGoster();
+
+
+    durumGoster(
+        "🗑️ Tüm kayıtlar temizlendi."
+    );
+
+}
+
+
+/* =====================================================
+   DURUM
+===================================================== */
+
+function durumGoster(
+    mesaj
+){
+
+    document.getElementById(
+        "durum"
+    ).textContent =
+        mesaj;
+
+}
+
+
+/* =====================================================
+   HTML GÜVENLİĞİ
+===================================================== */
+
+function escapeHtml(
+    metin
+){
+
+    return String(metin)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* =====================================================
+   KIRMIZI ALANI TAŞIMA
+===================================================== */
+
+const kilavuz =
+    document.getElementById(
+        "kilavuz"
+    );
+
+
+let tasiniyor = false;
+
+let baslangicX = 0;
+
+let baslangicY = 0;
+
+let ilkLeft = 0;
+
+let ilkTop = 0;
+
+
+kilavuz.addEventListener(
+    "pointerdown",
+    function(e){
+
+        if(
+            e.target.id ===
+            "boyutTutacak"
+        ){
+            return;
+        }
+
+
+        tasiniyor = true;
+
+
+        const rect =
+            kilavuz.getBoundingClientRect();
+
+
+        const parent =
+            document
+            .getElementById(
+                "kameraAlan"
+            )
+            .getBoundingClientRect();
+
+
+        baslangicX =
+            e.clientX;
+
+
+        baslangicY =
+            e.clientY;
+
+
+        ilkLeft =
+            rect.left -
+            parent.left;
+
+
+        ilkTop =
+            rect.top -
+            parent.top;
+
+
+        kilavuz.style.transform =
+            "none";
+
+
+        kilavuz.setPointerCapture(
+            e.pointerId
+        );
+
+    }
+);
+
+
+kilavuz.addEventListener(
+    "pointermove",
+    function(e){
+
+        if(!tasiniyor){
+            return;
+        }
+
+
+        const parent =
+            document.getElementById(
+                "kameraAlan"
+            );
+
+
+        let yeniLeft =
+            ilkLeft +
+            (
+                e.clientX -
+                baslangicX
+            );
+
+
+        let yeniTop =
+            ilkTop +
+            (
+                e.clientY -
+                baslangicY
+            );
+
+
+        yeniLeft =
+            Math.max(
+                0,
+                Math.min(
+                    yeniLeft,
+                    parent.clientWidth -
+                    kilavuz.offsetWidth
+                )
+            );
+
+
+        yeniTop =
+            Math.max(
+                0,
+                Math.min(
+                    yeniTop,
+                    parent.clientHeight -
+                    kilavuz.offsetHeight
+                )
+            );
+
+
+        kilavuz.style.left =
+            yeniLeft + "px";
+
+
+        kilavuz.style.top =
+            yeniTop + "px";
+
+    }
+);
+
+
+kilavuz.addEventListener(
+    "pointerup",
+    function(){
+
+        tasiniyor = false;
+
+    }
+);
+
+
+/* =====================================================
+   KIRMIZI ALAN BOYUTLANDIRMA
+===================================================== */
+
+const tutacak =
+    document.getElementById(
+        "boyutTutacak"
+    );
+
+
+let boyutlandiriliyor = false;
+
+let basX = 0;
+
+let basY = 0;
+
+let ilkGenislik = 0;
+
+let ilkYukseklik = 0;
+
+
+tutacak.addEventListener(
+    "pointerdown",
+    function(e){
+
+        e.stopPropagation();
+
+
+        boyutlandiriliyor =
+            true;
+
+
+        const rect =
+            kilavuz.getBoundingClientRect();
+
+
+        basX =
+            e.clientX;
+
+
+        basY =
+            e.clientY;
+
+
+        ilkGenislik =
+            rect.width;
+
+
+        ilkYukseklik =
+            rect.height;
+
+
+        tutacak.setPointerCapture(
+            e.pointerId
+        );
+
+    }
+);
+
+
+tutacak.addEventListener(
+    "pointermove",
+    function(e){
+
+        if(
+            !boyutlandiriliyor
+        ){
+            return;
+        }
+
+
+        const parent =
+            document.getElementById(
+                "kameraAlan"
+            );
+
+
+        let yeniGenislik =
+            ilkGenislik +
+            (
+                e.clientX -
+                basX
+            );
+
+
+        let yeniYukseklik =
+            ilkYukseklik +
+            (
+                e.clientY -
+                basY
+            );
+
+
+        yeniGenislik =
+            Math.max(
+                120,
+                Math.min(
+                    yeniGenislik,
+                    parent.clientWidth
+                )
+            );
+
+
+        yeniYukseklik =
+            Math.max(
+                80,
+                Math.min(
+                    yeniYukseklik,
+                    parent.clientHeight
+                )
+            );
+
+
+        kilavuz.style.width =
+            yeniGenislik + "px";
+
+
+        kilavuz.style.height =
+            yeniYukseklik + "px";
+
+    }
+);
+
+
+tutacak.addEventListener(
+    "pointerup",
+    function(){
+
+        boyutlandiriliyor =
+            false;
+
+    }
+);
+
+
+/* =====================================================
+   BAŞLANGIÇ
+===================================================== */
+
+listeyiGoster();
+
+</script>
+
+</body>
+</html>
